@@ -1,3 +1,3 @@
 #pragma once
 
-int A();
+int choco(int n, int m);
