@@ -2,9 +2,12 @@
 
 #include "lib.h"
 
-int choco(int n, int m) {
-    if (n <= 0 || m <= 0){
+int ChopTheChocolate(int row, int column) {
+    if (row <= 0 || column <= 0){
         return 0;
     }
-    return ((n - 1) + (m - 1));
+    int total = ((row - 1) + (column - 1));
+
+    return total;
+
 }

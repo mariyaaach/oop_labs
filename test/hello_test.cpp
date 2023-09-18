@@ -7,7 +7,7 @@ TEST(ExampleOfStandartUsageTest1, BasicAssertions) {
   int column = 3;
 
   // act
-  int result = choco(row, column);
+  int result = ChopTheChocolate(row, column);
 
   // assert
   EXPECT_EQ(result, 2);
@@ -20,7 +20,7 @@ TEST(ExampleOfStandartUsageTest2, BasicAssertions) {
   int column = 4;
 
   // act
-  int result = choco(row, column);
+  int result = ChopTheChocolate(row, column);
 
   // assert
   EXPECT_EQ(result, 4);
@@ -32,7 +32,7 @@ TEST(ExampleOfStandartUsageTest3, BasicAssertions) {
   int column = 2;
 
   // act
-  int result = choco(row, column);
+  int result = ChopTheChocolate(row, column);
 
   // assert
   EXPECT_EQ(result, 5);
@@ -44,7 +44,7 @@ TEST(ExampleOfStandartUsageTest4, BasicAssertions) {
   int column = 3;
 
   // act
-  int result = choco(row, column);
+  int result = ChopTheChocolate(row, column);
 
   // assert
   EXPECT_EQ(result, 0);
@@ -56,7 +56,7 @@ TEST(ExampleOfStandartUsageTest5, BasicAssertions) {
   int column = 3;
 
   // act
-  int result = choco(row, column);
+  int result = ChopTheChocolate(row, column);
 
   // assert
   EXPECT_EQ(result, 9);
