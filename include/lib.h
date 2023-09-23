@@ -1,3 +1,5 @@
 #pragma once
 
-int A();
+int chopTheChocolate(int rowOfChocolate, int columnOfChocolate);
+
+

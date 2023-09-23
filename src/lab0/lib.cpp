@@ -1,7 +1,11 @@
-// Copyright 2023 SomeName
-
 #include "lib.h"
 
-int A() {
-    return 20;
+int chopTheChocolate(int rowOfChocolate, int columnOfChocolate) {
+    if (rowOfChocolate <= 0 || columnOfChocolate <= 0) {
+        return 0;
+    }
+
+    int countOfParts = (rowOfChocolate - 1) + (columnOfChocolate - 1);
+
+    return countOfParts;
 }
