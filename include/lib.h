@@ -7,14 +7,16 @@ using namespace std;
 
 class Money {
 public:
-    size_t length;
-    unsigned char* amount;
+    size_t length; //  Длина массива 
+    unsigned char* amount; // Указатель на массив
 
 public:
     // Конструкторы
     Money();
     Money(initializer_list<unsigned char> initList);
     Money(const string& str);
+    Money(const Money& other);
+    Money(Money&& other) noexcept; 
 
     // Деструктор
     ~Money();
