@@ -2,7 +2,7 @@
 #define FIGURE_HPP_INCLUDED
 
 #include "Vector.h"
-
+#include "/com.docker.devenvironments.code/src/lab0/Vector.cpp"
 #include "Point.h"
 
 #include <iostream>
