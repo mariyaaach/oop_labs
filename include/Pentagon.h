@@ -18,8 +18,8 @@ public:
     operator double() const override;
     Point geom_center() const override;
 
-    friend std::ostream& operator<<(ostream&, const Pentagon&);
-    friend std::istream& operator>>(istream&, Pentagon&);
+    friend ostream& operator<<(ostream&, const Pentagon&);
+    friend istream& operator>>(istream&, Pentagon&);
     friend bool operator==(const Pentagon&, const Pentagon&);
 
 

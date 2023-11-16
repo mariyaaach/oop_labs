@@ -7,7 +7,7 @@
 
 using namespace std;
 
-class Hexagon: public Figure {
+class Hexagon: public Figure { //публичные методы класса Hexagon
 public:    
     Hexagon(
     const Point& p1,
@@ -24,7 +24,7 @@ public:
     friend istream& operator>>(istream&, Hexagon&);
     friend bool operator==(const Hexagon&, const Hexagon&);
 
-private:
+private: //эта строка объявляет приватный метод is_valid(), который будет использоваться внутри класса для проверки корректности координат шестиугольника
     bool is_valid(
     const Point& p1,
     const Point& p2,
