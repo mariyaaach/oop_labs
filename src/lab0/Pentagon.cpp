@@ -19,7 +19,7 @@ bool Pentagon::is_valid(
 
     double inaccuracy = 1e-5;
 
-    //side length
+
 
     double side_p1p2 = Point::line_len(p1, p2);
     double side_p2p3 = Point::line_len(p2, p3);

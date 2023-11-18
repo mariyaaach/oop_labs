@@ -28,14 +28,14 @@ double Point::line_len(const Point& p1, const Point& p2) { // метод для 
     double x2 = p2.get_x(); //получение координаты x второй точки
     
     double y1 = p1.get_y(); //получение координаты y первой точки
-    double y2 = p2.get_y(); //получение координаты y второй точки
+    double y2 = p2.get_y();  //получение координаты y второй точки
     
     return std::sqrt(std::pow(x1 - x2, 2) + std::pow(y1 - y2, 2)); //вычисление и возврат длины отрезка между двумя точками
 }
 
 bool operator==(const Point& lhs, const Point& rhs) { //перегрузка оператора сравнения равенства для объектов класса Point
 
-    double inaccuracy = 1e-5; // задание погрешности для сравнения
+    double inaccuracy = 1e-5; //задание погрешности для сравнения
 
     if (std::abs(lhs.x - rhs.x) < inaccuracy && std::abs(lhs.y - lhs.y) < inaccuracy) {  // сравнение координат x и y с учетом погрешности
         return true; //если координаты равны с учетом погрешности, возвращается true

@@ -12,7 +12,7 @@ protected:
 
 public:
     virtual operator double() const = 0;  //виртуальная функция преобразования объекта фигуры в тип double
-    virtual Point geom_center() const = 0;  //виртуальная функция для вычисления геометрического центра фигуры.
+    virtual Point geom_center() const = 0;  //виртуальная функция для вычисления геометрического центра фигуры
     
 };
 
