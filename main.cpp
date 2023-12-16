@@ -2,95 +2,118 @@
 #include "dragon.h"
 #include "knight.h"
 #include "princess.h"
+#include <iostream>
+#include <sstream>
+#include <thread>
+#include <mutex>
+#include <chrono>
+#include <queue>
+#include <optional>
+#include <array>
+#include <fstream>
+#include <set>
+#include <shared_mutex>
+#include <cstdlib>
+#include <ctime>
+#include <cerrno>
 
-bool success;
-int cnt_p{0};
-int cnt_d{0};
-int cnt_k{0};
 
-// Фабрика из файла
-std::shared_ptr<NPC>factory(std::ifstream &is)
+using namespace std::chrono_literals;
+std::mutex print_mutex;
+
+
+class TextObserver : public IFightObserver
+{
+private:
+    TextObserver(){};
+
+public:
+    static std::shared_ptr<IFightObserver> get()
+    {
+        static TextObserver instance;
+        return std::shared_ptr<IFightObserver>(&instance, [](IFightObserver *) {});
+    }
+
+    void on_fight(const std::shared_ptr<NPC> attacker, const std::shared_ptr<NPC> defender, bool win) override
+    {
+        if (win)
+        {
+            std::lock_guard<std::mutex> lck(print_mutex);
+            std::cout << std::endl
+                      << "Murder --------" << std::endl;
+            attacker->print();
+            defender->print();
+        }
+    }
+};
+
+
+std::shared_ptr<NPC> factory(std::istream &is)
 {
     std::shared_ptr<NPC> result;
-    std::string name;
     int type{0};
     if (is >> type)
     {
         switch (type)
         {
         case DragonType:
-            ++cnt_d;
-            name = "Dragon_№" + std::to_string(cnt_d);
-            result = std::make_shared<Dragon>(is,name);
+            result = std::make_shared<Dragon>(is);
             break;
         case KnightType:
-            ++cnt_k;
-            name = "Knight_№" + std::to_string(cnt_k);
-            result = std::make_shared<Knight>(is,name);
+            result = std::make_shared<Knight>(is);
             break;
         case PrincessType:
-            ++cnt_p;
-            name = "Princess_№" + std::to_string(cnt_p);
-            result = std::make_shared<Princess>(is,name);
+            result = std::make_shared<Princess>(is);
             break;
         }
     }
     else
         std::cerr << "unexpected NPC type:" << type << std::endl;
 
+    if (result)
+        result->subscribe(TextObserver::get());
+
     return result;
 }
 
-// Фабрика
 std::shared_ptr<NPC> factory(NpcType type, int x, int y)
 {
     std::shared_ptr<NPC> result;
-    std::string name;
-    switch (type){
+    switch (type)
+    {
     case DragonType:
-        ++cnt_d;
-        name = "Dragon_№" + std::to_string(cnt_d);
-        result = std::make_shared<Dragon>(x, y,name);
+        result = std::make_shared<Dragon>(x, y);
         break;
     case KnightType:
-        ++cnt_k;
-        name = "Knight_№" + std::to_string(cnt_k);
-        result = std::make_shared<Knight>(x, y,name);
+        result = std::make_shared<Knight>(x, y);
         break;
     case PrincessType:
-        ++cnt_p;
-        name = "Princess_№" + std::to_string(cnt_p);
-        result = std::make_shared<Princess>(x, y,name);
+        result = std::make_shared<Princess>(x, y);
         break;
     default:
         break;
     }
+    if (result)
+        result->subscribe(TextObserver::get());
+
     return result;
 }
 
-// Сохранить в файл
-void file_save(const set_t &array, const std::string &filename)
+// save array to file
+void save(const set_t &array, const std::string &filename)
 {
-    std::ofstream fs;
-    fs.open(filename);
-    if(fs.is_open()){
-        fs << array.size() << std::endl;
-        for (auto &n : array)
-            n->save(fs);
-        fs.close();
-    }
-    else{
-        std::cerr << "FILE NOT OPEN" << std::endl;
-    }
+    std::ofstream fs(filename);
+    fs << array.size() << std::endl;
+    for (auto &n : array)
+        n->save(fs);
+    fs.flush();
+    fs.close();
 }
 
-
-// Загрузить из файла
 set_t load(const std::string &filename)
 {
     set_t result;
-    std::ifstream is;
-    is.open(filename);
+    std::ifstream is(filename);
     if (is.good() && is.is_open())
     {
         int count;
@@ -104,7 +127,7 @@ set_t load(const std::string &filename)
     return result;
 }
 
-// Печать на экран
+
 std::ostream &operator<<(std::ostream &os, const set_t &array)
 {
     for (auto &n : array)
@@ -112,121 +135,192 @@ std::ostream &operator<<(std::ostream &os, const set_t &array)
     return os;
 }
 
-class Visitor{
-public:
-    virtual int visit(Princess* element) = 0;
-    virtual int visit(Dragon* element) = 0;
-    virtual int visit(Knight* element) = 0;
-};
-
-class ConcreteVisitor1 : public Visitor {
-public:
-
-    int visit(Princess* element) override {
-        //std::cout << "VisitPrincess\n";
-        return 1;
-    }
-    
-    int visit(Dragon* element) override {
-        //std::cout << "visitDragon\n";
-        return 2;
-    }
-
-    int visit(Knight* element) override {
-        //std::cout << "visitKinght\n";
-        return 3;
-    }
-};
-
-void Princess::accept(std::shared_ptr<NPC> attacker, Visitor& visitor) {
-    int res = 0;
-    if(dynamic_cast<Dragon*>(attacker.get()))
-        res = visitor.visit(dynamic_cast<Dragon*>(attacker.get()));
-    
-    if(res == 2) success = true;
-}
-
-void Dragon::accept(std::shared_ptr<NPC> attacker,Visitor& visitor) {
-    int res = 0;
-    if(dynamic_cast<Knight*>(attacker.get()))
-        res = visitor.visit(dynamic_cast<Knight*>(attacker.get()));
-    
-    if(res == 3) success = true;
-}
-
-void Knight::accept(std::shared_ptr<NPC> attacker,Visitor& visitor) {}
-
-set_t fight(const set_t &array, size_t distance,Visitor& visitor)
+set_t fight(const set_t &array, size_t distance)
 {
     set_t dead_list;
 
     for (const auto &attacker : array)
         for (const auto &defender : array)
-            if ((attacker != defender) && (attacker->is_close(defender, distance)))
-            {
-                success = false;
-                defender->accept(attacker,visitor);
-                if (success){
-                    defender->notify(attacker.get(),true);
-                    dead_list.insert(defender);
-                }
-            }
+            if ((attacker != defender) &&
+                attacker->is_close(defender, distance) &&
+                defender->accept(attacker))
+                dead_list.insert(defender);
 
     return dead_list;
 }
 
+struct print : std::stringstream
+{
+    ~print()
+    {
+        static std::mutex mtx;
+        std::lock_guard<std::mutex> lck(print_mutex);
+        std::cout << this->str();
+        std::cout.flush();
+    }
+};
+
+struct FightEvent
+{
+    std::shared_ptr<NPC> attacker;
+    std::shared_ptr<NPC> defender;
+};
+
+class FightManager
+{
+private:
+    std::queue<FightEvent> events;
+    std::shared_mutex mtx;
+
+    FightManager() {}
+
+public:
+    static FightManager &get()
+    {
+        static FightManager instance;
+        return instance;
+    }
+
+    void add_event(FightEvent &&event)
+    {
+        std::lock_guard<std::shared_mutex> lock(mtx);
+        events.push(event);
+    }
+
+    void operator()()
+    {
+        while (true)
+        {
+            {
+                std::optional<FightEvent> event;
+
+                {
+                    std::lock_guard<std::shared_mutex> lock(mtx);
+                    if (!events.empty())
+                    {
+                        event = events.back();
+                        events.pop();
+                    }
+                }
+
+                if (event)
+                {
+                    try
+                    {
+                        if (event->attacker->is_alive())    
+                            if (event->defender->is_alive()) 
+                                if (event->defender->accept(event->attacker))
+                                    event->defender->must_die();
+                    }
+                    catch (...)
+                    {
+                        std::lock_guard<std::shared_mutex> lock(mtx);
+                        events.push(*event);
+                    }
+                }
+                else
+                    std::this_thread::sleep_for(100ms);
+            }
+        }
+    }
+};
+
 int main()
 {
-    srand(time(NULL));
-    std::string START_FILENAME = "../npc.txt"; 
-    std::string LOG_FILENAME = "../log.txt";
+    //srand(time(NULL));
+    set_t array; 
 
-    set_t array; // монстры
+    const int MAX_X{100};
+    const int MAX_Y{100};
+    const int DISTANCE{40};
 
-    // Гененрируем начальное распределение монстров
     std::cout << "Generating ..." << std::endl;
-    for (size_t i = 0; i < 20; ++i)
-        array.insert(factory(NpcType(std::rand() % 3 + 1),std::rand() % 500,std::rand() % 500));
-    
-    std::cout << "Saving ..." << std::endl;
-    file_save(array, START_FILENAME);
+    for (size_t i = 0; i < 50; ++i)
+        array.insert(factory(NpcType(std::rand() % 3 + 1),
+                             std::rand() % MAX_X,
+                             std::rand() % MAX_Y));
 
-    cnt_d = 0;
-    cnt_k = 0;
-    cnt_p = 0;
+    std::cout << "Starting list:" << std::endl
+              << array;
 
-    std::cout << "Loading ..." << std::endl;
-    array = load(START_FILENAME);
+    std::thread fight_thread(std::ref(FightManager::get()));
 
-    ConsoleObserver consObserv;
-    std::shared_ptr<ConsoleObserver> ob = std::make_shared<ConsoleObserver>(consObserv);
+    std::thread move_thread([&array, MAX_X, MAX_Y, DISTANCE]()
+                            {
+            while (true)
+            {
+                for (std::shared_ptr<NPC> npc : array)
+                {
+                        if(npc->is_alive()){
+                            int shift_x = std::rand() % 20 - 10;
+                            int shift_y = std::rand() % 20 - 10;
+                            npc->move(shift_x, shift_y, MAX_X, MAX_Y);
+                        }
+                }
+                for (std::shared_ptr<NPC> npc : array)
+                    for (std::shared_ptr<NPC> other : array)
+                        if (other != npc)
+                            if (npc->is_alive())
+                            if (other->is_alive())
+                            if (npc->is_close(other, DISTANCE))
+                                FightManager::get().add_event({npc, other});
 
-    FileObserver fileObserv(LOG_FILENAME);
-    std::shared_ptr<FileObserver> fb = std::make_shared<FileObserver>(fileObserv);
+                std::this_thread::sleep_for(1s);
+            } });
 
-    for(auto& elem: array){
-        elem->attach(ob);
-        elem->attach(fb);
-    }
-
-    ConcreteVisitor1 visitor;
-
-    std::cout << "Fighting ..." << std::endl << array;
-
-    for (size_t distance = 20; (distance <= 500) && !array.empty(); distance += 50)
+    while (true)
     {
-        auto dead_list = fight(array, distance,visitor);
-        for (auto &d : dead_list)
-            array.erase(d);
-        
-        std::cout << std::endl <<  "========== Fight stats ==========" << std::endl
-                  << "distance: " << distance << std::endl
-                  << "killed: " << dead_list.size() << std::endl
-                  << std::endl << std::endl;
+        const int grid{20}, step_x{MAX_X / grid}, step_y{MAX_Y / grid};
+        {
+            std::array<char, grid * grid> fields{0};
+            for (std::shared_ptr<NPC> npc : array)
+            {
+                auto [x, y] = npc->position();
+                int i = x / step_x;
+                int j = y / step_y;
 
-    }
+                if (npc->is_alive())
+                {
+                    switch (npc->get_type())
+                    {
+                    case DragonType:
+                        fields[i + grid * j] = 'D';
+                        break;
+                    case KnightType:
+                        fields[i + grid * j] = 'K';
+                        break;
+                    case PrincessType:
+                        fields[i + grid * j] = 'P';
+                        break;
 
-    std::cout << std::endl << "Survivors:" << array;
+                    default:
+                        break;
+                    }
+                }
+                else
+                    fields[i + grid * j] = '.';
+            }
+
+            std::lock_guard<std::mutex> lck(print_mutex);
+            for (int j = 0; j < grid; ++j)
+            {
+                for (int i = 0; i < grid; ++i)
+                {
+                    char c = fields[i + j * grid];
+                    if (c != 0)
+                        std::cout << "[" << c << "]";
+                    else
+                        std::cout << "[ ]";
+                }
+                std::cout << std::endl;
+            }
+            std::cout << std::endl;
+        }
+        std::this_thread::sleep_for(1s);
+    };
+
+    move_thread.join();
+    fight_thread.join();
 
     return 0;
 }

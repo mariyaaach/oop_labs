@@ -4,7 +4,7 @@ project(lab0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_compile_options(-g -rdynamic)
+add_compile_options(-g -rdynamic -pthread)
 
 add_subdirectory(lib/googletest)
 
@@ -21,6 +21,8 @@ file(GLOB_RECURSE SOURCES LIST_DIRECTORIES false ${SOURCE_DIR}/*.cpp)
 file(GLOB_RECURSE TEST_SOURCES LIST_DIRECTORIES false ${TEST_DIR}/*.cpp)
 
 add_library(${CMAKE_PROJECT_NAME}_lib ${SOURCES})
+
+target_link_libraries(${CMAKE_PROJECT_NAME}_exe PRIVATE pthread)
 
 add_executable(${CMAKE_PROJECT_NAME}_exe main.cpp)
 

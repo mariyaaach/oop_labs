@@ -1,47 +1,71 @@
-#pragma once 
+#pragma once
 
-#include <iostream> 
-#include <memory> 
-#include <cstring> 
-#include <string> 
-#include <random> 
-#include <fstream> 
-#include <set> 
+#include <iostream>
+#include <memory>
+#include <cstring>
+#include <string>
+#include <random>
+#include <fstream>
+#include <set>
 #include <math.h>
-#include "observer.h"
+#include <shared_mutex>
 
-class NPC; // Объявление класса NPC
-class Princess; // Объявление класса Princess
-class Dragon; // Объявление класса Dragon
-class Knight; // Объявление класса Knight
-using set_t = std::set<std::shared_ptr<NPC>>; // Определение псевдонима типа для множества умных указателей на объекты класса NPC
+// type for npcs
+struct NPC;
+struct Dragon;
+struct Knight;
+struct Princess;
+using set_t = std::set<std::shared_ptr<NPC>>;
 
-enum NpcType {Unknown, PrincessType, DragonType, KnightType}; // Определение перечисления для типов NPC
+enum NpcType
+{
+    Unknown = 0,
+    DragonType = 1,
+    KnightType = 2,
+    PrincessType = 3
+};
 
-class Visitor; // Объявление класса Visitor
+struct IFightObserver
+{
+    virtual void on_fight(const std::shared_ptr<NPC> attacker, const std::shared_ptr<NPC> defender, bool win) = 0;
+};
 
-class NPC{
+class NPC
+{
+private:
+    std::mutex mtx;
+
+    NpcType type;
+    int x{0};
+    int y{0};
+    bool alive{true};
+
+    std::vector<std::shared_ptr<IFightObserver>> observers;
+
 public:
-    NpcType type; // Поле для хранения типа NPC
-    int x{0}, y{0}; // Поля для хранения координат x и y
-    std::string name; // Поле для хранения имени
-    std::vector<std::shared_ptr<IObserver>> observers; // Вектор умных указателей на объекты класса IObserver
+    NPC(NpcType t, int _x, int _y);
+    NPC(NpcType t, std::istream &is);
 
-    NPC(NpcType t, int _x, int _y,std::string &_name); // Объявление конструктора класса NPC с параметрами t, _x, _y, _name
-    NPC(NpcType t,std::ifstream &is,std::string &_name); // Объявление конструктора класса NPC с параметрами t, is, _name
-    NPC(NPC& other); // Объявление конструктора копирования класса NPC
-    NPC(NPC* other); // Объявление конструктора класса NPC с параметром-указателем на объект другого класса NPC
-    virtual ~NPC(); // Виртуальный деструктор класса NPC
+    void subscribe(std::shared_ptr<IFightObserver> observer);
+    void fight_notify(const std::shared_ptr<NPC> defender, bool win);
+    virtual bool is_close(const std::shared_ptr<NPC> &other, size_t distance);
 
-    bool is_close(const std::shared_ptr<NPC> &other, size_t distance) const; // Объявление метода is_close класса NPC, возвращающего булево значение, принимающего умный указатель на объект класса NPC other и значение distance
-    void notify(NPC* attacker, bool win); // Объявление метода notify класса NPC, принимающего указатель на объект класса NPC attacker и флаг win
+    virtual bool accept(std::shared_ptr<NPC> visitor) = 0;
+    // visit
+    virtual bool fight(std::shared_ptr<Dragon> other) = 0;
+    virtual bool fight(std::shared_ptr<Knight> other) = 0;
+    virtual bool fight(std::shared_ptr<Princess> other) = 0;
 
-    virtual void get_name(std::ofstream &os){}; // Виртуальный метод get_name класса NPC, принимающий ссылку на объект класса std::ofstream
-    virtual void accept(std::shared_ptr<NPC> attacker,Visitor& visitor){}; // Виртуальный метод accept класса NPC, принимающий умный указатель на объект класса NPC attacker и объект класса Visitor
-    virtual void attach(std::shared_ptr<IObserver> observer){}; // Виртуальный метод attach класса NPC, принимающий умный указатель на объект интерфейса IObserver
-    virtual void detach(std::shared_ptr<IObserver> observer){}; // Виртуальный метод detach класса NPC, принимающий умный указатель на объект интерфейса IObserver
-    virtual void print(){}; // Виртуальный метод print класса NPC
-    virtual void save(std::ofstream &os); // Виртуальный метод save класса NPC, принимающий ссылку на объект класса std::ofstream
+    virtual void print() = 0;
+    std::pair<int, int> position();
+    NpcType get_type();
 
-    friend std::ostream &operator<<(std::ostream &os, NPC &npc); // Объявление дружественной функции перегруженного оператора << для класса NPC
+    virtual void save(std::ostream &os);
+
+    friend std::ostream &operator<<(std::ostream &os, NPC &npc);
+
+    void move(int shift_x, int shift_y, int max_x, int max_y);
+
+    bool is_alive();
+    void must_die();
 };

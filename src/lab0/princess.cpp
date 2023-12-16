@@ -1,38 +1,55 @@
-#include "princess.h" 
-#include "dragon.h" 
-#include "knight.h" 
-#include <algorithm> 
+#include "princess.h"
+#include "dragon.h"
+#include "knight.h"
 
-Princess::Princess(int x, int y,std::string &_name) :  NPC(PrincessType, x, y, _name) {} // Определение конструктора класса Princess с параметрами x, y, _name, вызывающего конструктор базового класса NPC с параметрами PrincessType, x, y, _name
+// Конструктор для класса Princess
+Princess::Princess(int x, int y) : NPC(PrincessType, x, y) {}
 
-Princess::Princess(std::ifstream &is,std::string &_name) : NPC(PrincessType, is, _name) {} // Определение конструктора класса Princess с параметрами is, _name, вызывающего конструктор базового класса NPC с параметрами PrincessType, is, _name
+// Конструктор для класса Princess, использующий входной поток
+Princess::Princess(std::istream &is) : NPC(PrincessType, is) {}
 
-Princess::~Princess() {} // Определение деструктора класса Princess
+// Метод для обработки посещения другим NPC
+bool Princess::accept(std::shared_ptr<NPC> visitor){
+    return visitor->fight(std::shared_ptr<Princess>(this,[](Princess*){}));
+}
 
-void Princess::print() // Определение функции print класса Princess
+// Метод для вывода информации о принцессе
+void Princess::print()
 {
-    std::cout << *this; // Вывод объекта класса Princess в стандартный поток вывода
+    std::cout << *this;
 }
 
-void Princess::save(std::ofstream &os){ // Определение функции save класса Princess, принимающей ссылку на объект класса std::ofstream
-    os << PrincessType << std::endl; // Запись PrincessType в поток os
-    NPC::save(os); // Вызов функции save базового класса NPC с параметром os
-}
-
-void Princess::get_name(std::ofstream &os){ // Определение функции get_name класса Princess, принимающей ссылку на объект класса std::ofstream
-    os << this->name << " " << "{x: " << this->x << "; y:" << this->y << "}" << std::endl; // Запись имени, координат x и y в поток os
-}
-
-void Princess::attach(std::shared_ptr<IObserver> observer) { // Определение функции attach класса Princess, принимающей указатель на объект интерфейса IObserver
-    NPC::observers.push_back(observer); // Добавление объекта observer в вектор observers базового класса NPC
-}
-
-void Princess::detach(std::shared_ptr<IObserver> observer) { // Определение функции detach класса Princess, принимающей указатель на объект интерфейса IObserver
-    NPC::observers.erase(std::find(NPC::observers.begin(), NPC::observers.end(), observer)); // Удаление объекта observer из вектора observers базового класса NPC при помощи функции std::find и std::vector::erase
-}
-
-std::ostream &operator<<(std::ostream &os, Princess &princess) // Определение перегруженного оператора << для класса Princess
+// Метод для сохранения состояния принцессы в выходной поток
+void Princess::save(std::ostream &os)
 {
-    os << "princess: " << *static_cast<NPC*>(&princess) << std::endl; // Вывод строки "princess: " и объекта princess базового класса NPC в стандартный поток вывода
-    return os; // Возврат ссылки на стандартный поток вывода
+    os << PrincessType << std::endl;
+    NPC::save(os);
+}
+
+// Метод для обработки сражения с драконом
+bool Princess::fight(std::shared_ptr<Dragon> other)
+{
+    fight_notify(other, false);
+    return true;
+}
+
+// Метод для обработки сражения с рыцарем
+bool Princess::fight(std::shared_ptr<Knight> other)
+{
+    fight_notify(other, false);
+    return true;
+}
+
+// Метод для обработки сражения с другой принцессой
+bool Princess::fight(std::shared_ptr<Princess> other)
+{
+    fight_notify(other, false);
+    return true;
+}
+
+// Перегруженный оператор вывода для класса Princess
+std::ostream &operator<<(std::ostream &os, Princess &princess)
+{
+    os << "princess: " << *static_cast<NPC *>(&princess) << std::endl;
+    return os;
 }

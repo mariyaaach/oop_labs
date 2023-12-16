@@ -1,43 +1,88 @@
-#include "npc.h" 
+#include "npc.h"
 
-NPC::NPC(NpcType t, int _x, int _y,std::string &_name) : type(t), x(_x), y(_y), name(_name) {} // Определение конструктора класса NPC с параметрами t, _x, _y, _name, инициализирующего поля type, x, y, name
-
-NPC::NPC(NpcType t,std::ifstream &is,std::string &_name): type(t), name(_name) // Определение конструктора класса NPC с параметрами t, is, _name, инициализирующего поля type, name
+// Конструктор класса NPC
+NPC::NPC(NpcType t, int _x, int _y) : type(t), x(_x), y(_y) {}
+// Конструктор класса NPC, использующий входной поток
+NPC::NPC(NpcType t, std::istream &is) : type(t)
 {
-    is >> x; // Считывание значения x из потока is
-    is >> y; // Считывание значения y из потока is
+    is >> x;
+    is >> y;
 }
 
-NPC::NPC(NPC& other) : type(other.type), x(other.x),y(other.y){} // Определение конструктора копирования класса NPC, инициализирующего поля type, x, y
-
-NPC::NPC(NPC* other) : type(other->type), x(other->x),y(other->y){} // Определение конструктора класса NPC, принимающего указатель на объект другого класса NPC, инициализирующего поля type, x, y
-
-NPC::~NPC(){} // Определение деструктора класса NPC
-
-void NPC::notify(NPC* attacker, bool win) { // Определение функции notify класса NPC, принимающей указатель на объект класса NPC attacker и флаг win
-    if (win) { // Если win равно true
-        for (auto &elem : NPC::observers) { // Цикл по всем элементам в векторе observers класса NPC
-            elem->on_fight(attacker,this, win); // Вызов метода on_fight для каждого наблюдателя с параметрами attacker, this и win
-        }
-    }
+// Метод для подписки на наблюдателя
+void NPC::subscribe(std::shared_ptr<IFightObserver> observer)
+{
+    observers.push_back(observer);
 }
 
-bool NPC::is_close(const std::shared_ptr<NPC> &other, size_t distance) const // Определение функции is_close класса NPC, принимающей указатель на объект класса NPC other и значение distance, возвращающей булево значение
+// Метод для уведомления наблюдателей о сражении
+void NPC::fight_notify(const std::shared_ptr<NPC> defender, bool win)
 {
-    if (std::pow(x - other->x, 2) + std::pow(y - other->y, 2) <= std::pow(distance, 2)) // Если квадрат разницы координат x и y меньше или равен квадрату distance
-        return true; // Возвращается true
-    else // Иначе
-        return false; // Возвращается false
+    for (auto &o : observers)
+        o->on_fight(std::shared_ptr<NPC>(this, [](NPC *) {}), defender, win);
 }
 
-void NPC::save(std::ofstream &os) // Определение функции save класса NPC, принимающей ссылку на объект класса std::ofstream
+// Метод для проверки, находится ли NPC рядом с другим NPC
+bool NPC::is_close(const std::shared_ptr<NPC> &other, size_t distance)
 {
-    os << x << std::endl; // Запись значения x в поток os
-    os << y << std::endl; // Запись значения y в поток os
+    auto [other_x, other_y] = other->position();
+
+    std::lock_guard<std::mutex> lck(mtx);
+    if ((std::pow(x - other_x, 2) + std::pow(y - other_y, 2)) <= std::pow(distance, 2))
+        return true;
+    else
+        return false;
 }
 
-std::ostream &operator<<(std::ostream &os, NPC &npc) // Определение перегруженного оператора << для класса NPC
+// Метод для получения типа NPC
+NpcType NPC::get_type()
 {
-    os << "name = " << npc.name << " { x:" << npc.x << ", y:" << npc.y << "} "; // Вывод строки "name = ", имени, координат x и y объекта npc в стандартный поток вывода
-    return os; // Возврат ссылки на стандартный поток вывода
+    std::lock_guard<std::mutex> lck(mtx);
+    return type;
+}
+
+// Метод для получения позиции NPC
+std::pair<int, int> NPC::position()
+{
+    std::lock_guard<std::mutex> lck(mtx);
+    return {x, y};
+}
+
+// Метод для сохранения состояния NPC в поток вывода
+void NPC::save(std::ostream &os)
+{
+    os << x << std::endl;
+    os << y << std::endl;
+}
+
+// Перегруженный оператор вывода для класса NPC
+std::ostream &operator<<(std::ostream &os, NPC &npc)
+{
+    os << "{ x:" << npc.x << ", y:" << npc.y << "} ";
+    return os;
+}
+
+// Метод для перемещения NPC
+void NPC::move(int shift_x, int shift_y, int max_x, int max_y)
+{
+    std::lock_guard<std::mutex> lck(mtx);
+
+    if ((x + shift_x >= 0) && (x + shift_x <= max_x))
+        x += shift_x;
+    if ((y + shift_y >= 0) && (y + shift_y <= max_y))
+        y += shift_y;
+}
+
+// Метод для проверки, жив ли NPC
+bool NPC::is_alive()
+{
+    std::lock_guard<std::mutex> lck(mtx);
+    return alive;
+}
+
+// Метод для пометки NPC как мертвого
+void NPC::must_die()
+{
+    std::lock_guard<std::mutex> lck(mtx);
+    alive = false;
 }

@@ -1,21 +1,20 @@
-#pragma once 
-
+#pragma once
 #include "npc.h" 
 
-struct Princess : public NPC // Определение структуры Princess, наследующей от класса NPC
+// Определение класса Princess, унаследованного от класса NPC
+struct Princess : public NPC
 {
-    Princess(int x, int y,std::string &_name); // Объявление конструктора класса Princess с параметрами x, y, _name
-    Princess(std::ifstream &is,std::string &_name); // Объявление конструктора класса Princess с параметрами is, _name
-    ~Princess(); // Объявление деструктора класса Princess
+    // Конструкторы
+    Princess(int x, int y);
+    Princess(std::istream &is);
 
-    void print() override; // Переопределенный метод print
-    void save(std::ofstream &os) override; // Переопределенный метод save
+    // Переопределение виртуальных методов базового класса NPC
+    void print() override;
+    void save(std::ostream &os) override;
+    bool fight(std::shared_ptr<Dragon> other) override;
+    bool fight(std::shared_ptr<Knight> other) override;
+    bool fight(std::shared_ptr<Princess> other) override;
+    bool accept(std::shared_ptr<NPC> visitor) override;
 
-    void get_name(std::ofstream &os) override; // Переопределенный метод get_name
-
-    void accept(std::shared_ptr<NPC> attacker,Visitor& visitor); // Метод accept
-    void attach(std::shared_ptr<IObserver> observer) override; // Переопределенный метод attach
-    void detach(std::shared_ptr<IObserver> observer) override; // Переопределенный метод detach
-
-    friend std::ostream &operator<<(std::ostream &os, Princess &princess); // Объявление дружественной функции перегруженного оператора << для класса Princess
+    friend std::ostream &operator<<(std::ostream &os, Princess &knight); // Дружественная функция для вывода объектов класса Princess
 };

@@ -1,37 +1,55 @@
-#include "dragon.h" 
-#include "knight.h" 
-#include "princess.h" 
-#include <algorithm> 
+#include "dragon.h"
+#include "knight.h"
+#include "princess.h"
 
-Dragon::Dragon(int x, int y,std::string &_name) : NPC(DragonType, x, y, _name) {} // Определение конструктора класса Dragon с параметрами x, y, _name, вызывающего конструктор базового класса NPC с параметрами DragonType, x, y, _name
+// Конструктор для класса Dragon
+Dragon::Dragon(int x, int y) : NPC(DragonType, x, y) {}
 
-Dragon::Dragon(std::ifstream &is,std::string &_name) : NPC(DragonType, is, _name) {} // Определение конструктора класса Dragon с параметрами is, _name, вызывающего конструктор базового класса NPC с параметрами DragonType, is, _name
+// Конструктор для класса Dragon, использующий входной поток
+Dragon::Dragon(std::istream &is) : NPC(DragonType, is) {}
 
-void Dragon::print() // Определение функции print класса Dragon
+// Метод для обработки посещения другим NPC
+bool Dragon::accept(std::shared_ptr<NPC> visitor){
+    return visitor->fight(std::shared_ptr<Dragon>(this,[](Dragon*){}));
+}
+
+// Метод для вывода информации о драконе
+void Dragon::print()
 {
-    std::cout << *this; // Вывод объекта класса Dragon в стандартный поток вывода
+    std::cout << *this;
 }
 
-void Dragon::attach(std::shared_ptr<IObserver> observer) { // Определение функции attach класса Dragon, принимающей указатель на объект интерфейса IObserver
-    NPC::observers.push_back(observer); // Добавление объекта observer в вектор observers базового класса NPC
-}
-
-void Dragon::detach(std::shared_ptr<IObserver> observer) { // Определение функции detach класса Dragon, принимающей указатель на объект интерфейса IObserver
-    NPC::observers.erase(std::find(NPC::observers.begin(), NPC::observers.end(), observer)); // Удаление объекта observer из вектора observers базового класса NPC при помощи функции std::find и std::vector::erase
-}
-
-void Dragon::save(std::ofstream &os)  // Определение функции save класса Dragon, принимающей ссылку на объект класса std::ofstream
+// Метод для обработки сражения с другим драконом
+bool Dragon::fight(std::shared_ptr<Dragon> other) 
 {
-    os << DragonType << std::endl; // Запись DragonType в поток os
-    NPC::save(os); // Вызов функции save базового класса NPC с параметром os
+    fight_notify(other, false);
+    return false;
 }
 
-void Dragon::get_name(std::ofstream &os){ // Определение функции get_name класса Dragon, принимающей ссылку на объект класса std::ofstream
-    os << this->name << " " << "{x: " << this->x << "; y:" << this->y << "}" << std::endl; // Запись имени, координат x и y в поток os
-}
-
-std::ostream &operator<<(std::ostream &os, Dragon &dragon) // Определение перегруженного оператора << для класса Dragon
+// Метод для обработки сражения с рыцарем
+bool Dragon::fight(std::shared_ptr<Knight> other) 
 {
-    os << "dragon: " << *static_cast<NPC *>(&dragon) << std::endl; // Вывод строки "dragon: " и объекта dragon базового класса NPC в стандартный поток вывода
-    return os; // Возврат ссылки на стандартный поток вывода
+    fight_notify(other, false);
+    return false;
+}
+
+// Метод для обработки сражения с принцессой
+bool Dragon::fight(std::shared_ptr<Princess> other) 
+{
+    fight_notify(other, true);
+    return false;
+}
+
+// Метод для сохранения состояния дракона в выходной поток
+void Dragon::save(std::ostream &os) 
+{
+    os << DragonType << std::endl;
+    NPC::save(os);
+}
+
+// Перегруженный оператор вывода для класса Dragon
+std::ostream &operator<<(std::ostream &os, Dragon &dragon)
+{
+    os << "dragon: " << *static_cast<NPC *>(&dragon) << std::endl;
+    return os;
 }
